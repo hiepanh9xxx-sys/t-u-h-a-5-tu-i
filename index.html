@@ -139,6 +139,34 @@ button:focus-visible{outline:4px solid var(--grape);outline-offset:3px}
 #voiceTest{font-size:1rem;padding:.3rem .8rem}
 #voiceNote{font-size:.85rem;color:var(--muted);text-align:center;font-weight:600}
 
+/* Save game */
+#playerRow{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+#playerRow .who{flex:1;min-width:0;font-weight:800;font-size:1.1rem;display:flex;align-items:center;gap:8px}
+.dot{width:22px;height:22px;border-radius:50%;border:3px solid var(--ink);flex:none}
+#saveOpen{font-size:1rem;padding:.25rem .8rem}
+#resumeBtn{background:var(--leaf);color:#fff;font-size:1.25rem}
+#resumeBtn small{display:block;font-size:.85rem;font-weight:600;opacity:.9}
+#saves{display:grid;place-items:center;background:rgba(43,35,64,.45);padding:16px;overflow-y:auto}
+#savesCard{width:min(520px,100%);padding:16px;box-sizing:border-box;display:flex;flex-direction:column;gap:12px;max-height:100%;overflow-y:auto}
+#savesCard h2{margin:0;font-size:1.6rem;line-height:1.1;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.slot{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;align-items:center;padding:10px 12px;border:3px solid var(--ink);border-radius:16px;background:var(--card)}
+.slot.cur{background:#e4f7ec;box-shadow:0 4px 0 var(--ink)}
+.slot .dot{width:34px;height:34px;grid-row:span 2}
+.slot .nm{font-weight:800;font-size:1.15rem;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.slot .meta{font-weight:600;font-size:.88rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.slot .acts{grid-column:1/-1;display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
+.mini{border:2px solid var(--ink);border-radius:10px;background:var(--card);font-weight:800;font-size:.9rem;padding:.15rem .6rem}
+.mini.main{background:var(--sun)}
+.mini.warn{background:#ffd3cf}
+.slot input{font:800 1.05rem var(--font);color:var(--ink);border:2px solid var(--ink);border-radius:10px;padding:.1rem .4rem;min-width:0;width:100%;box-sizing:border-box;background:var(--card)}
+#codeBox{display:flex;flex-direction:column;gap:6px;border-top:2px dashed var(--soft);padding-top:10px}
+#codeBox p{margin:0;font-weight:600;color:var(--muted);font-size:.9rem}
+#codeTxt{font:600 .85rem ui-monospace,Menlo,Consolas,monospace;color:var(--ink);background:var(--soft);border:2px solid var(--ink);border-radius:10px;padding:6px;min-height:64px;resize:vertical;width:100%;box-sizing:border-box;word-break:break-all}
+#codeMsg{font-weight:700;min-height:1.3em;font-size:.9rem}
+#toast{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 70px);transform:translate(-50%,-10px);opacity:0;padding:.2rem .9rem;font-weight:800;transition:all .3s;pointer-events:none;background:#e4f7ec;z-index:6}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+.st .best{font-size:.7rem;letter-spacing:-.05em}
+
 /* Summary */
 #sum{display:grid;place-items:center;background:rgba(43,35,64,.45);padding:16px}
 #sumCard{width:min(440px,100%);padding:18px;text-align:center;box-sizing:border-box}
@@ -168,6 +196,7 @@ button:focus-visible{outline:4px solid var(--grape);outline-offset:3px}
     <div id="rightTools">
       <button class="iconBtn" id="musicBtn" aria-label="Bật tắt nhạc nền">🎵</button>
       <button class="iconBtn" id="voiceBtn2" aria-label="Bật tắt giọng nói">🔊</button>
+      <button class="iconBtn" id="saveBtn" aria-label="Lưu game">💾</button>
       <button class="iconBtn" id="homeBtn" aria-label="Về chọn tàu">🏠</button>
     </div>
   </div>
@@ -189,6 +218,7 @@ button:focus-visible{outline:4px solid var(--grape);outline-offset:3px}
 <div class="layer" id="select">
   <div id="logo" class="chunk"><h1>Đoàn Tàu <span>Nhỏ</span></h1><p>Cuộc chạy trốn Tàu Nhện</p></div>
   <div id="panel" class="chunk">
+    <div id="playerRow"><div class="who"><span class="dot" id="whoDot"></span><span id="whoName">Bé</span></div><button class="btn ghost" id="saveOpen">💾 Lưu game</button></div>
     <div id="pick">
       <button class="iconBtn" id="prevT" aria-label="Tàu trước">◀</button>
       <div id="pickInfo"><div id="pickName">Bí Ngô</div><div id="pickLine"></div></div>
@@ -196,11 +226,28 @@ button:focus-visible{outline:4px solid var(--grape);outline-offset:3px}
     </div>
     <div><div class="lbl" id="garageLbl">Gara bộ phận</div><div id="garage"></div></div>
     <div><div class="lbl">Chọn chặng đường</div><div id="stages"></div></div>
+    <button class="btn" id="resumeBtn" hidden>▶ Chơi tiếp<small></small></button>
     <button class="btn" id="go">Xuất phát! 🚂</button>
     <div id="voiceRow"><label class="lbl" for="voiceSel">Giọng đọc</label><select id="voiceSel"></select><button class="btn ghost" id="voiceTest">🔊 Nghe thử</button><button class="iconBtn" id="musicBtn2" aria-label="Bật tắt nhạc nền">🎵</button></div>
     <div id="voiceNote"></div>
   </div>
 </div>
+
+<div class="layer" id="saves" hidden>
+  <div class="chunk" id="savesCard" role="dialog" aria-label="Lưu game">
+    <h2>💾 Lưu game <button class="iconBtn" id="savesClose" aria-label="Đóng">✕</button></h2>
+    <p style="margin:0;font-weight:600;color:var(--muted)">Game tự lưu sau mỗi câu đúng. Mỗi bé có thể dùng một ô lưu riêng.</p>
+    <div id="slotList" style="display:flex;flex-direction:column;gap:8px"></div>
+    <div id="codeBox">
+      <div class="lbl">Chuyển sang máy khác</div>
+      <p>Lấy mã lưu ở máy này, rồi dán vào ô bên dưới ở máy kia và bấm "Dùng mã này".</p>
+      <div style="display:flex;gap:6px;flex-wrap:wrap"><button class="mini main" id="codeMake">Lấy mã lưu</button><button class="mini" id="codeCopy">Sao chép</button><button class="mini" id="codeUse">Dùng mã này</button></div>
+      <textarea id="codeTxt" placeholder="Mã lưu game sẽ hiện ở đây, hoặc dán mã vào đây"></textarea>
+      <div id="codeMsg"></div>
+    </div>
+  </div>
+</div>
+<div id="toast" class="chunk"></div>
 
 <div class="layer" id="sum" hidden>
   <div class="chunk" id="sumCard">
@@ -308,11 +355,20 @@ const STAGES=[
 ];
 
 /* ---------------- STATE ---------------- */
-let owned=new Set(store.get('parts',[]));
-let starsTotal=store.get('stars',0);
-let unlocked=store.get('unlocked',1);
-let trainIdx=store.get('train',0)%TRAINS.length;
-let stageIdx=Math.min(store.get('stage',0),unlocked-1);
+/* ---------- Save slots ---------- */
+const blankSave=name=>({name,parts:[],stars:0,unlocked:1,train:0,stage:0,best:{},resume:null,t:0});
+let slots=store.get('slots',null);
+if(!Array.isArray(slots)||slots.length!==3){slots=[null,null,null];
+ // carry over progress saved by the earlier version of the game
+ const old=store.get('parts',null);if(old||store.get('stars',null)!=null)slots[0]=Object.assign(blankSave('Bé 1'),{parts:old||[],stars:store.get('stars',0),unlocked:store.get('unlocked',1),train:store.get('train',0),stage:store.get('stage',0),t:Date.now()})}
+let slotIdx=Math.max(0,Math.min(2,store.get('slot',0)));
+if(!slots[slotIdx])slots[slotIdx]=blankSave('Bé '+(slotIdx+1));
+let owned,starsTotal,unlocked,trainIdx,stageIdx;
+function applySlot(){const d=slots[slotIdx];owned=new Set(d.parts.filter(id=>PARTS.some(p=>p.id===id)));starsTotal=d.stars|0;unlocked=Math.max(1,Math.min(STAGES.length,d.unlocked|0));trainIdx=(d.train|0)%TRAINS.length;stageIdx=Math.min(d.stage|0,unlocked-1)}
+function saveGame(msg){const d=slots[slotIdx];Object.assign(d,{parts:[...owned],stars:starsTotal,unlocked,train:trainIdx,stage:stageIdx,t:Date.now()});store.set('slots',slots);store.set('slot',slotIdx);if(msg)toast(msg)}
+function saveResume(){const d=slots[slotIdx];d.resume=G.boss>0?{stage:G.stage,boss:G.boss,energy:G.energy,combo:G.combo,firstTry:G.firstTry,gained:G.gained.map(p=>p.id)}:null;saveGame()}
+let toastT=0;function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),1500)}
+applySlot();
 let voiceOn=store.get('voice',true);
 const has=id=>owned.has(id);
 
@@ -587,9 +643,9 @@ function flash(t,col){const f=$('#flash');f.textContent=t;f.style.color=col||'#f
 function updHud(){const bar=$('#bossBar');bar.innerHTML='';for(let i=0;i<5;i++){const s=document.createElement('i');if(i>=G.boss)s.className='off';bar.appendChild(s)}
  document.querySelectorAll('#energy span:not(#starsLbl)').forEach((s,i)=>s.classList.toggle('on',i<G.energy));$('#starsLbl').textContent='⭐ '+starsTotal}
 
-function startStage(i){
+function startStage(i,res){
  Music.theme(i);Music.start();
- G.stage=i;const S=STAGES[i];stageIdx=i;store.set('stage',i);
+ G.stage=i;const S=STAGES[i];stageIdx=i;
  setEnv(S.env);if(monster)scene.remove(monster.g);monster=buildMonster(S.kind);monster.g.visible=true;
  Object.assign(G,{mode:'intro',speed:9,gap:16,boss:5,energy:0,combo:0,maxCombo:0,firstTry:0,qCount:0,gained:[],runT:3.2,defeat:0,turbo:0,super:0,y:0,vy:0});
  rebuildTrain();
@@ -597,6 +653,8 @@ function startStage(i){
  $('#stageLbl').innerHTML=`<small>Chặng ${i+1}</small><span>${S.name}</span>`;$('#bossName').textContent=S.boss;$('#combo').hidden=true;updHud();
  setTimeout(()=>{if(G.mode==='intro'||G.mode==='run'){flash(S.boss+' đuổi tới!','#ffd0d0');say(`Ối! ${S.boss} đang đuổi theo! Mình cùng giúp đoàn tàu nhé!`)}},900);
  G.gapTarget=8;
+ if(res){Object.assign(G,{boss:res.boss,energy:res.energy|0,combo:res.combo|0,firstTry:res.firstTry|0,gained:(res.gained||[]).map(id=>PARTS.find(p=>p.id===id)).filter(Boolean),gap:12,gapTarget:9});if(G.combo>=3){$('#combo').hidden=false;$('#combo').textContent='COMBO ×'+G.combo}updHud()}
+ else{slots[slotIdx].resume=null;saveGame()}
 }
 function startRun(){G.mode='run';G.runT=2.6}
 G.speedTarget=()=>G.mode==='question'?2.5:(G.turbo>0?16:10);
@@ -622,7 +680,7 @@ function answer(o,btn){
   setTimeout(()=>{
    if(G.energy>=3){G.energy=0;updHud();superWhistle()}
    $('#quiz').classList.remove('open');G.locked=false;
-   if(G.boss<=0){G.mode='defeat';G.defeat=0;flash('Hạ gục rồi! 💥','#ffd36b')}
+   if(G.boss<=0){slots[slotIdx].resume=null;saveGame();G.mode='defeat';G.defeat=0;flash('Hạ gục rồi! 💥','#ffd36b')}
    else{startRun()}
   },2600);
  }else{
@@ -635,16 +693,16 @@ function answer(o,btn){
 }
 function giveGift(){
  const next=PARTS.find(p=>!owned.has(p.id));let icon,name,sub;
- if(next){owned.add(next.id);store.set('parts',[...owned]);G.gained.push(next);icon=next.icon;name=next.name;sub='Bé nhận được';rebuildTrain(true);starsTotal+=2}
+ if(next){owned.add(next.id);G.gained.push(next);icon=next.icon;name=next.name;sub='Bé nhận được';rebuildTrain(true);starsTotal+=2}
  else{starsTotal+=5;icon='⭐';name='5 ngôi sao';sub='Gara đã đủ bộ! Thưởng thêm'}
- store.set('stars',starsTotal);updHud();SFX.gift();
+ saveResume();updHud();SFX.gift();
  const g=$('#gift');g.querySelector('.gi').textContent=icon;g.querySelector('.gt').innerHTML=`<small>${sub}</small><span>${name}</span>`;g.classList.add('show');setTimeout(()=>g.classList.remove('show'),1700);
 }
 function superWhistle(){flash('TU TUUUUU! 📯','#fff3a0');SFX.whistle();say('Siêu còi tàu! Tu tu!');ring(train.tail);setTimeout(()=>ring(train.tail),180);G.gapTarget=Math.min(G.gapTarget+4,13);G.gap+=4}
 function finishStage(){
  G.mode='summary';SFX.win();confetti();
- const stars=G.firstTry>=5?3:G.firstTry>=3?2:1;const bonus=10+stars*5;starsTotal+=bonus;store.set('stars',starsTotal);
- unlocked=Math.max(unlocked,Math.min(STAGES.length,G.stage+2));store.set('unlocked',unlocked);
+ const stars=G.firstTry>=5?3:G.firstTry>=3?2:1;const bonus=10+stars*5;starsTotal+=bonus;const d=slots[slotIdx];d.best[G.stage]=Math.max(d.best[G.stage]||0,stars);d.resume=null;
+ unlocked=Math.max(unlocked,Math.min(STAGES.length,G.stage+2));saveGame('Đã lưu ✓');
  $('#sumStars').textContent='⭐'.repeat(stars)+'☆'.repeat(3-stars);
  const last=G.stage===STAGES.length-1;
  $('#sumCard h2').textContent=last?'Thoát khỏi đường hầm!':'Về đích rồi!';
@@ -657,11 +715,16 @@ function finishStage(){
 function confetti(){const cols=['#ff5a4e','#ffc531','#3d9bff','#1fae6a','#7a5cff','#ff8fc0'];for(let i=0;i<60;i++){const c=document.createElement('i');c.className='confetti';c.style.left=Math.random()*100+'vw';c.style.background=pick(cols);c.style.animationDuration=(1.8+Math.random()*1.8)+'s';c.style.animationDelay=Math.random()*.6+'s';document.body.appendChild(c);setTimeout(()=>c.remove(),4500)}}
 
 /* ---------------- SELECT SCREEN ---------------- */
+const hex=n=>'#'+n.toString(16).padStart(6,'0');
 function renderSelect(){
  const t=TRAINS[trainIdx];$('#pickName').textContent=t.name;$('#pickLine').textContent=t.line;
  $('#garage').innerHTML=PARTS.map(p=>`<span class="${owned.has(p.id)?'own':''}" title="${p.name}">${p.icon}</span>`).join('');
  $('#garageLbl').textContent=`Gara bộ phận · ${owned.size}/${PARTS.length}`;
- $('#stages').innerHTML=STAGES.map((s,i)=>`<button class="st ${i===stageIdx?'on':''}" data-i="${i}" ${i>=unlocked?'disabled':''}>${i>=unlocked?'🔒 ':''}${s.name}<small>${s.topic}</small></button>`).join('');
+ const best=slots[slotIdx].best||{};
+ $('#stages').innerHTML=STAGES.map((s,i)=>`<button class="st ${i===stageIdx?'on':''}" data-i="${i}" ${i>=unlocked?'disabled':''}>${i>=unlocked?'🔒 ':''}${s.name}<small>${s.topic}${best[i]?' · <span class="best">'+'⭐'.repeat(best[i])+'</span>':''}</small></button>`).join('');
+ const d=slots[slotIdx];$('#whoName').textContent=d.name;$('#whoDot').style.background=hex(TRAINS[trainIdx].body);
+ const r=d.resume;$('#resumeBtn').hidden=!r;if(r)$('#resumeBtn').querySelector('small').textContent=`Chặng ${r.stage+1} · ${STAGES[r.stage].name} · yêu quái còn ${r.boss}/5 máu`;
+ $('#go').textContent=r?'Chơi chặng mới 🚂':'Xuất phát! 🚂';
  document.querySelectorAll('.st').forEach(b=>b.onclick=()=>{stageIdx=+b.dataset.i;renderSelect()});
  const on=document.querySelector('.st.on');if(on)on.scrollIntoView({block:'nearest',inline:'nearest'});
  updVoiceNote();
@@ -670,9 +733,44 @@ function toSelect(){G.mode='select';G.speed=0;stopSpeech();Music.theme(-1);
  if(monster)monster.g.visible=false;
  $('#quiz').classList.remove('open');$('#hud').hidden=true;$('#sum').hidden=true;$('#select').hidden=false;
  setEnv('station');G.y=0;G.vy=0;G.hist=[];rebuildTrain();renderSelect()}
-$('#prevT').onclick=()=>{trainIdx=(trainIdx+TRAINS.length-1)%TRAINS.length;store.set('train',trainIdx);rebuildTrain(true);renderSelect();audio();tone(660,.12,'triangle',.1)};
-$('#nextT').onclick=()=>{trainIdx=(trainIdx+1)%TRAINS.length;store.set('train',trainIdx);rebuildTrain(true);renderSelect();audio();tone(780,.12,'triangle',.1)};
+$('#prevT').onclick=()=>{trainIdx=(trainIdx+TRAINS.length-1)%TRAINS.length;saveGame();rebuildTrain(true);renderSelect();audio();tone(660,.12,'triangle',.1)};
+$('#nextT').onclick=()=>{trainIdx=(trainIdx+1)%TRAINS.length;saveGame();rebuildTrain(true);renderSelect();audio();tone(780,.12,'triangle',.1)};
 $('#go').onclick=()=>{audio();startStage(stageIdx)};
+$('#resumeBtn').onclick=()=>{audio();const r=slots[slotIdx].resume;if(r)startStage(r.stage,r)};
+$('#saveBtn').onclick=()=>{if(G.mode!=='select'&&G.mode!=='summary'&&G.boss>0)saveResume();saveGame('Đã lưu ✓')};
+$('#saveOpen').onclick=()=>{renderSlots();$('#codeMsg').textContent='';$('#saves').hidden=false};
+$('#savesClose').onclick=()=>{$('#saves').hidden=true};
+const fmtTime=t=>{if(!t)return 'chưa chơi';const d=new Date(t);return d.toLocaleDateString('vi-VN')+' '+d.toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'})};
+const esc=x=>String(x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let delArm=-1,delT=0,editing=-1;
+function renderSlots(){$('#slotList').innerHTML=slots.map((d,i)=>{
+ if(!d)return `<div class="slot"><span class="dot" style="background:var(--soft)"></span><div class="nm">Ô lưu ${i+1}: trống</div><div class="meta">Tạo hồ sơ cho một bé mới</div><div class="acts"><button class="mini main" data-new="${i}">＋ Tạo mới</button></div></div>`;
+ const head=editing===i?`<input id="nameIn" maxlength="16" value="${esc(d.name)}" aria-label="Tên của bé">`:`<div class="nm">${esc(d.name)}${i===slotIdx?' ✓':''}</div>`;
+ return `<div class="slot ${i===slotIdx?'cur':''}"><span class="dot" style="background:${hex(TRAINS[(d.train|0)%TRAINS.length].body)}"></span>${head}
+ <div class="meta">Chặng ${Math.min(d.unlocked,7)}/7 · ${d.parts.length}/${PARTS.length} bộ phận · ⭐ ${d.stars}${d.resume?' · đang dở chặng '+(d.resume.stage+1):''}<br>Lưu lúc: ${fmtTime(d.t)}</div>
+ <div class="acts">${i===slotIdx?'':`<button class="mini main" data-load="${i}">▶ Chơi ô này</button>`}${editing===i?`<button class="mini main" data-ok="${i}">Xong</button>`:`<button class="mini" data-ren="${i}">✏️ Đổi tên</button>`}<button class="mini ${delArm===i?'warn':''}" data-del="${i}">${delArm===i?'Bấm lần nữa để xóa':'🗑 Xóa'}</button></div></div>`}).join('');
+ const nin=$('#nameIn');if(nin){nin.focus();nin.select();nin.onkeydown=e=>{if(e.key==='Enter')finishRename()}}}
+function finishRename(){const nin=$('#nameIn');if(nin&&editing>=0){const v=nin.value.trim().slice(0,16);if(v)slots[editing].name=v}editing=-1;store.set('slots',slots);renderSlots();renderSelect()}
+$('#slotList').onclick=e=>{const b=e.target.closest('button');if(!b)return;const ds=b.dataset;
+ if(ds.new!=null){const i=+ds.new;slots[i]=blankSave('Bé '+(i+1));slots[i].t=Date.now();saveGame();slotIdx=i;applySlot();saveGame('Đã tạo hồ sơ mới');editing=i;afterSwitch()}
+ else if(ds.load!=null){saveGame();slotIdx=+ds.load;applySlot();saveGame('Đã chuyển sang '+slots[slotIdx].name);afterSwitch()}
+ else if(ds.ren!=null){editing=+ds.ren;renderSlots()}
+ else if(ds.ok!=null){finishRename()}
+ else if(ds.del!=null){const i=+ds.del;if(delArm!==i){delArm=i;clearTimeout(delT);delT=setTimeout(()=>{delArm=-1;renderSlots()},3000);renderSlots();return}
+  delArm=-1;slots[i]=null;if(i===slotIdx){const other=slots.findIndex(x=>x);slotIdx=other>=0?other:i;if(!slots[slotIdx])slots[slotIdx]=blankSave('Bé '+(slotIdx+1));applySlot()}store.set('slots',slots);store.set('slot',slotIdx);toast('Đã xóa ô lưu');afterSwitch()}};
+function afterSwitch(){renderSlots();rebuildTrain(true);renderSelect()}
+// save code: portable text that moves one profile between devices
+$('#codeMake').onclick=()=>{saveGame();const d=slots[slotIdx];const json=JSON.stringify({v:1,name:d.name,parts:d.parts,stars:d.stars,unlocked:d.unlocked,train:d.train,stage:d.stage,best:d.best,resume:d.resume});
+ $('#codeTxt').value='DTN1-'+btoa(unescape(encodeURIComponent(json)));$('#codeMsg').textContent='Đây là mã lưu của '+d.name+'. Sao chép và gửi sang máy kia nhé.'};
+$('#codeCopy').onclick=()=>{const t=$('#codeTxt');if(!t.value){$('#codeMsg').textContent='Bấm "Lấy mã lưu" trước nhé.';return}
+ const ok=()=>{$('#codeMsg').textContent='Đã sao chép mã ✓'};const fb=()=>{t.focus();t.select();$('#codeMsg').textContent='Mã đã được chọn sẵn, bấm giữ hoặc Ctrl+C để sao chép.'};
+ try{navigator.clipboard.writeText(t.value).then(ok,fb)}catch(e){fb()}};
+$('#codeUse').onclick=()=>{const raw=$('#codeTxt').value.trim().replace(/\s+/g,'');const m=$('#codeMsg');
+ try{if(!raw.startsWith('DTN1-'))throw 0;const o=JSON.parse(decodeURIComponent(escape(atob(raw.slice(5)))));if(!Array.isArray(o.parts))throw 0;
+  const d=Object.assign(blankSave(String(o.name||'Bé').slice(0,16)),{parts:o.parts.filter(x=>typeof x==='string'),stars:Math.max(0,o.stars|0),unlocked:Math.max(1,Math.min(7,o.unlocked|0)),train:Math.max(0,o.train|0),stage:Math.max(0,o.stage|0),best:typeof o.best==='object'&&o.best?o.best:{},resume:o.resume&&typeof o.resume==='object'?o.resume:null,t:Date.now()});
+  let i=slots.findIndex(x=>!x);if(i<0)i=slotIdx;slots[i]=d;slotIdx=i;applySlot();saveGame('Đã nhập mã lưu ✓');m.textContent=`Đã mở hồ sơ "${d.name}" vào ô lưu ${i+1}.`;afterSwitch()}
+ catch(e){m.textContent='Mã chưa đúng. Hãy dán lại đầy đủ mã bắt đầu bằng DTN1-'}};
+addEventListener('visibilitychange',()=>{if(document.hidden)saveGame()});
 $('#homeBtn').onclick=toSelect;$('#sumHome').onclick=toSelect;
 $('#sumNext').onclick=()=>startStage(Math.min(G.stage+1,STAGES.length-1));
 $('#voiceBtn2').onclick=()=>{voiceOn=!voiceOn;store.set('voice',voiceOn);updVoiceNote();if(!voiceOn)stopSpeech()};

@@ -27,7 +27,15 @@ Bé trả lời câu hỏi để giúp đoàn tàu thoát khỏi yêu quái Tàu
 - 16 bộ phận tàu để sưu tập: đèn pha, chuông, ống khói vàng, cờ, bánh xe vàng, vương miện và 6 toa tàu.
 - Combo: đúng 3 câu liên tiếp được COMBO ×3, 5 câu được TURBO, 10 câu thành SIÊU TÀU.
 - Đủ 3 năng lượng: tàu kéo Siêu còi đẩy yêu quái lùi lại.
-- Tiến độ (bộ phận, sao, chặng đã mở) lưu trong trình duyệt của máy đang chơi.
+
+## Lưu game
+
+- **Tự lưu** sau mỗi câu trả lời đúng, khi về đích và khi đóng hoặc chuyển tab.
+- **Chơi tiếp:** nếu thoát giữa chặng, lần sau màn chọn tàu có nút **▶ Chơi tiếp**, quay lại đúng chặng với máu yêu quái, năng lượng và bộ phận đã nhận.
+- **3 ô lưu:** bấm **💾 Lưu game** ở màn chọn tàu để tạo, đổi tên, chuyển hoặc xóa hồ sơ. Mỗi bé một ô riêng.
+- **Lưu ngay:** nút 💾 trên thanh trên cùng khi đang chơi.
+- **Chuyển sang máy khác:** trong bảng Lưu game, bấm **Lấy mã lưu**, gửi mã sang máy kia, dán vào ô và bấm **Dùng mã này**.
+- Dữ liệu lưu trong trình duyệt của từng máy. Nếu xóa dữ liệu trình duyệt hoặc dùng chế độ ẩn danh thì sẽ mất, nên hãy giữ mã lưu nếu cần.
 
 ## Giọng đọc tiếng Việt
 

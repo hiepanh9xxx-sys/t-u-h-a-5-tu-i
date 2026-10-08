@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="description" content="Game 3D giáo dục cho bé 5 tuổi: trả lời câu hỏi để giúp đoàn tàu thoát khỏi Tàu Nhện.">
 <meta name="theme-color" content="#9fd7ff">
+<meta name="referrer" content="no-referrer">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚂</text></svg>">
 <title>Đoàn Tàu Nhỏ</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -134,6 +135,7 @@ button:focus-visible{outline:4px solid var(--grape);outline-offset:3px}
 #go{font-size:1.6rem;padding:.4rem 1rem}
 #voiceRow{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 #voiceSel{flex:1;min-width:0;font:700 1rem var(--font);color:var(--ink);background:var(--card);border:3px solid var(--ink);border-radius:12px;padding:.35rem .5rem}
+#musicBtn.off,#musicBtn2.off{opacity:.45;text-decoration:line-through}
 #voiceTest{font-size:1rem;padding:.3rem .8rem}
 #voiceNote{font-size:.85rem;color:var(--muted);text-align:center;font-weight:600}
 
@@ -164,6 +166,7 @@ button:focus-visible{outline:4px solid var(--grape);outline-offset:3px}
     <div class="chunk pill" id="stageLbl"><small>Màn 1</small><span>Ga Bình Minh</span></div>
     <div class="chunk" id="boss"><div id="bossName">Tàu Nhện</div><div id="bossBar"></div></div>
     <div id="rightTools">
+      <button class="iconBtn" id="musicBtn" aria-label="Bật tắt nhạc nền">🎵</button>
       <button class="iconBtn" id="voiceBtn2" aria-label="Bật tắt giọng nói">🔊</button>
       <button class="iconBtn" id="homeBtn" aria-label="Về chọn tàu">🏠</button>
     </div>
@@ -194,7 +197,7 @@ button:focus-visible{outline:4px solid var(--grape);outline-offset:3px}
     <div><div class="lbl" id="garageLbl">Gara bộ phận</div><div id="garage"></div></div>
     <div><div class="lbl">Chọn chặng đường</div><div id="stages"></div></div>
     <button class="btn" id="go">Xuất phát! 🚂</button>
-    <div id="voiceRow"><label class="lbl" for="voiceSel">Giọng đọc</label><select id="voiceSel"></select><button class="btn ghost" id="voiceTest">🔊 Nghe thử</button></div>
+    <div id="voiceRow"><label class="lbl" for="voiceSel">Giọng đọc</label><select id="voiceSel"></select><button class="btn ghost" id="voiceTest">🔊 Nghe thử</button><button class="iconBtn" id="musicBtn2" aria-label="Bật tắt nhạc nền">🎵</button></div>
     <div id="voiceNote"></div>
   </div>
 </div>
@@ -327,20 +330,60 @@ const SFX={
  hit(){tone(180,.18,'square',.12,0,90);tone(900,.15,'triangle',.08,.05,400)},
  win(){[523,659,784,659,784,1046].forEach((f,i)=>tone(f,.3,'triangle',.13,i*.13))}
 };
-let viVoices=[],viVoice=null,voicesKnown=false;
-const voiceRank=v=>(/google/i.test(v.name)?0:/natural|online|neural/i.test(v.name)?1:2)+(v.localService?0:.5)*0;
+/* ---------- Background music (generated, no files) ---------- */
+const Music={on:store.get('music',true),g:null,timer:null,step:0,next:0,bpm:104,root:0,pat:[],ducked:false,noise:null,
+ PROG:[[0,4,7],[7,11,14],[9,12,16],[5,9,12]],
+ theme(i){const seed=[7,3,11,5,13,2,17,19][i+1]||7;let r=seed;const rand=()=>(r=(r*9301+49297)%233280)/233280;
+  this.bpm=i<0?96:[104,112,108,116,110,106,120][i];this.root=i<0?0:[0,2,-3,5,-1,4,0][i];
+  const pent=[0,2,4,7,9,12,14,16];this.pat=Array.from({length:32},(_,k)=>{if(k%2===0)return this.PROG[Math.floor(k/8)%4][Math.floor(rand()*3)]+12;return rand()<.45?pent[Math.floor(rand()*pent.length)]:null});this.step=0},
+ note(f,t,d,type,v){const a=ac;const o=a.createOscillator(),e=a.createGain();o.type=type;o.frequency.value=f;e.gain.setValueAtTime(0,t);e.gain.linearRampToValueAtTime(v,t+.01);e.gain.exponentialRampToValueAtTime(.0008,t+d);o.connect(e).connect(this.g);o.start(t);o.stop(t+d+.05)},
+ hz(n){return 261.63*Math.pow(2,(n+this.root)/12)},
+ play(s,t){const ch=this.PROG[Math.floor(s/8)%4],b=s%8;
+  if(b===0||b===4)this.note(this.hz(ch[0]-24),t,.35,'triangle',.5);
+  if(b===2||b===6)ch.forEach(n=>this.note(this.hz(n),t,.18,'sine',.09));
+  const m=this.pat[s];if(m!=null)this.note(this.hz(m),t,.22,'triangle',.22);
+  if(b===0||b===4){const a=ac,o=a.createOscillator(),e=a.createGain();o.frequency.setValueAtTime(140,t);o.frequency.exponentialRampToValueAtTime(45,t+.12);e.gain.setValueAtTime(.45,t);e.gain.exponentialRampToValueAtTime(.001,t+.14);o.connect(e).connect(this.g);o.start(t);o.stop(t+.16)}
+  if(b%2===1){const a=ac,n=a.createBufferSource(),e=a.createGain(),hp=a.createBiquadFilter();hp.type='highpass';hp.frequency.value=6000;n.buffer=this.noise;e.gain.setValueAtTime(.12,t);e.gain.exponentialRampToValueAtTime(.001,t+.05);n.connect(hp).connect(e).connect(this.g);n.start(t);n.stop(t+.06)}},
+ level(){return this.ducked?.035:.13},
+ start(){const a=audio();if(!a||!this.on)return;if(!this.g){this.g=a.createGain();this.g.gain.value=0;this.g.connect(a.destination);const nb=a.createBuffer(1,a.sampleRate*.1,a.sampleRate);const d=nb.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;this.noise=nb}
+  if(!this.pat.length)this.theme(-1);this.g.gain.setTargetAtTime(this.level(),a.currentTime,.4);
+  if(!this.timer){this.next=a.currentTime+.1;this.timer=setInterval(()=>{const spb=60/this.bpm/2;while(this.next<ac.currentTime+.15){this.play(this.step,this.next);this.next+=spb;this.step=(this.step+1)%32}},25)}},
+ stop(){if(this.g&&ac)this.g.gain.setTargetAtTime(0,ac.currentTime,.15);clearInterval(this.timer);this.timer=null},
+ duck(d){this.ducked=d;if(this.g&&ac&&this.timer)this.g.gain.setTargetAtTime(this.level(),ac.currentTime,.12)},
+ toggle(){this.on=!this.on;store.set('music',this.on);this.on?this.start():this.stop();updMusicBtn()}};
+function updMusicBtn(){['#musicBtn','#musicBtn2'].forEach(s=>$(s).classList.toggle('off',!Music.on))}
+
+/* ---------- Vietnamese voice ----------
+   1) Google Tiếng Việt played as audio (online, same voice on every device)
+   2) fallback: the browser's own Vietnamese voice */
+let viVoices=[],viVoice=null,voicesKnown=false,gttsBroken=false,curAudio=null,speakQ=null,speakId=0;
+let voiceMode=store.get('voiceMode','gtts');
+const voiceRank=v=>/google/i.test(v.name)?0:/natural|online|neural/i.test(v.name)?1:2;
 function loadVoices(){try{const all=speechSynthesis.getVoices();if(!all.length)return;voicesKnown=true;
  viVoices=all.filter(x=>/^vi/i.test(x.lang)||/vietnam|tiếng việt/i.test(x.name)).sort((a,b)=>voiceRank(a)-voiceRank(b));
- const saved=store.get('voiceName',null);viVoice=viVoices.find(v=>v.name===saved)||viVoices[0]||null;fillVoices();updVoiceNote()}catch(e){}}
-function fillVoices(){const sel=$('#voiceSel');sel.innerHTML=viVoices.length?viVoices.map(v=>`<option value="${v.name}" ${v===viVoice?'selected':''}>${v.name}${/google/i.test(v.name)?' ★':''}</option>`).join(''):'<option>Chưa có giọng tiếng Việt</option>';sel.disabled=!viVoices.length}
+ viVoice=viVoices.find(v=>v.name===voiceMode)||viVoices[0]||null;fillVoices();updVoiceNote()}catch(e){}}
+function fillVoices(){const sel=$('#voiceSel');
+ sel.innerHTML=`<option value="gtts" ${voiceMode==='gtts'?'selected':''}>Google Tiếng Việt (trực tuyến) ★</option>`+viVoices.map(v=>`<option value="${v.name}" ${voiceMode===v.name?'selected':''}>Giọng máy: ${v.name}</option>`).join('')}
 try{loadVoices();speechSynthesis.onvoiceschanged=loadVoices;setTimeout(loadVoices,800);setTimeout(loadVoices,2500)}catch(e){}
-let speakQ=null;
-function say(t){if(!voiceOn)return;if(voicesKnown&&!viVoice)return;try{speechSynthesis.cancel();clearTimeout(speakQ);
- // Chrome drops an utterance spoken right after cancel(); a short delay keeps it
- speakQ=setTimeout(()=>{const u=new SpeechSynthesisUtterance(t);u.lang=viVoice?viVoice.lang:'vi-VN';u.rate=/google/i.test(viVoice&&viVoice.name||'')?1:.92;u.pitch=1.1;if(viVoice)u.voice=viVoice;speechSynthesis.speak(u)},60)}catch(e){}}
-function updVoiceNote(){const g=viVoice&&/google/i.test(viVoice.name);
- $('#voiceNote').textContent=!voicesKnown?'':!viVoice?'Máy này chưa có giọng tiếng Việt. Hãy mở game bằng Chrome để có giọng Google Tiếng Việt.':g?'Đang dùng giọng Google Tiếng Việt.':'Chưa thấy giọng Google. Mở bằng trình duyệt Chrome sẽ có giọng Google Tiếng Việt.';
- $('#voiceBtn2').textContent=voiceOn?'🔊':'🔇'}
+function stopSpeech(){speakId++;clearTimeout(speakQ);if(curAudio){try{curAudio.pause()}catch(e){}curAudio=null}try{speechSynthesis.cancel()}catch(e){}Music.duck(false)}
+function chunks(t){const out=[];t.split(/(?<=[.!?])\s+/).forEach(p=>{while(p.length>180){const i=p.lastIndexOf(' ',180);out.push(p.slice(0,i));p=p.slice(i+1)}if(p.trim())out.push(p)});return out}
+function sayGoogle(t,id){const parts=chunks(t);let i=0;
+ const next=()=>{if(id!==speakId)return;if(i>=parts.length){curAudio=null;Music.duck(false);return}
+  const part=parts[i++];const a=new Audio('https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=vi&q='+encodeURIComponent(part));
+  a.playbackRate=.92;a.preservesPitch=true;a.volume=1;curAudio=a;Music.duck(true);
+  a.onended=next;
+  a.onerror=()=>{if(id!==speakId)return;gttsBroken=true;updVoiceNote();sayBrowser(parts.slice(i-1).join(' '),id)};
+  const pr=a.play();if(pr&&pr.catch)pr.catch(err=>{if(id!==speakId||err.name==='AbortError')return;if(err.name!=='NotAllowedError')gttsBroken=true;updVoiceNote();sayBrowser(parts.slice(i-1).join(' '),id)})};
+ next()}
+function sayBrowser(t,id){if(voicesKnown&&!viVoice){Music.duck(false);return}
+ speakQ=setTimeout(()=>{if(id!==speakId)return;try{const u=new SpeechSynthesisUtterance(t);u.lang=viVoice?viVoice.lang:'vi-VN';u.rate=.88;u.pitch=1.1;u.volume=1;if(viVoice)u.voice=viVoice;
+  u.onstart=()=>Music.duck(true);u.onend=u.onerror=()=>{if(id===speakId)Music.duck(false)};speechSynthesis.speak(u)}catch(e){}},60)}
+function say(t){if(!voiceOn)return;stopSpeech();const id=speakId;if(voiceMode==='gtts'&&!gttsBroken)sayGoogle(t,id);else sayBrowser(t,id)}
+function updVoiceNote(){let m='';
+ if(voiceMode==='gtts'&&!gttsBroken)m='Giọng Google đọc trực tuyến (cần có mạng).';
+ else if(voiceMode==='gtts'&&gttsBroken)m=viVoice?'Không tải được giọng Google ở đây, đang dùng giọng của máy.':'Không tải được giọng Google và máy chưa có giọng tiếng Việt.';
+ else if(!viVoice)m='Máy này chưa có giọng tiếng Việt.';
+ $('#voiceNote').textContent=m;$('#voiceBtn2').textContent=voiceOn?'🔊':'🔇'}
 
 /* ---------------- THREE SETUP ---------------- */
 const canvas=$('#c');
@@ -545,6 +588,7 @@ function updHud(){const bar=$('#bossBar');bar.innerHTML='';for(let i=0;i<5;i++){
  document.querySelectorAll('#energy span:not(#starsLbl)').forEach((s,i)=>s.classList.toggle('on',i<G.energy));$('#starsLbl').textContent='⭐ '+starsTotal}
 
 function startStage(i){
+ Music.theme(i);Music.start();
  G.stage=i;const S=STAGES[i];stageIdx=i;store.set('stage',i);
  setEnv(S.env);if(monster)scene.remove(monster.g);monster=buildMonster(S.kind);monster.g.visible=true;
  Object.assign(G,{mode:'intro',speed:9,gap:16,boss:5,energy:0,combo:0,maxCombo:0,firstTry:0,qCount:0,gained:[],runT:3.2,defeat:0,turbo:0,super:0,y:0,vy:0});
@@ -622,7 +666,7 @@ function renderSelect(){
  const on=document.querySelector('.st.on');if(on)on.scrollIntoView({block:'nearest',inline:'nearest'});
  updVoiceNote();
 }
-function toSelect(){G.mode='select';G.speed=0;try{speechSynthesis.cancel()}catch(e){}
+function toSelect(){G.mode='select';G.speed=0;stopSpeech();Music.theme(-1);
  if(monster)monster.g.visible=false;
  $('#quiz').classList.remove('open');$('#hud').hidden=true;$('#sum').hidden=true;$('#select').hidden=false;
  setEnv('station');G.y=0;G.vy=0;G.hist=[];rebuildTrain();renderSelect()}
@@ -631,9 +675,11 @@ $('#nextT').onclick=()=>{trainIdx=(trainIdx+1)%TRAINS.length;store.set('train',t
 $('#go').onclick=()=>{audio();startStage(stageIdx)};
 $('#homeBtn').onclick=toSelect;$('#sumHome').onclick=toSelect;
 $('#sumNext').onclick=()=>startStage(Math.min(G.stage+1,STAGES.length-1));
-$('#voiceBtn2').onclick=()=>{voiceOn=!voiceOn;store.set('voice',voiceOn);updVoiceNote();if(!voiceOn)try{speechSynthesis.cancel()}catch(e){}};
-$('#voiceSel').onchange=e=>{viVoice=viVoices.find(v=>v.name===e.target.value)||viVoice;store.set('voiceName',viVoice&&viVoice.name);updVoiceNote();say('Xin chào! Mình là đoàn tàu nhỏ.')};
-$('#voiceTest').onclick=()=>{loadVoices();const was=voiceOn;voiceOn=true;say('Xin chào! Con hãy đếm những ngôi sao nhé!');voiceOn=was};
+$('#voiceBtn2').onclick=()=>{voiceOn=!voiceOn;store.set('voice',voiceOn);updVoiceNote();if(!voiceOn)stopSpeech()};
+$('#voiceSel').onchange=e=>{voiceMode=e.target.value;store.set('voiceMode',voiceMode);gttsBroken=false;if(voiceMode!=='gtts')viVoice=viVoices.find(v=>v.name===voiceMode)||viVoice;updVoiceNote();say('Xin chào! Mình là đoàn tàu nhỏ.')};
+$('#voiceTest').onclick=()=>{audio();loadVoices();gttsBroken=false;const was=voiceOn;voiceOn=true;say('Xin chào! Con hãy đếm những ngôi sao nhé!');voiceOn=was};
+$('#musicBtn').onclick=$('#musicBtn2').onclick=()=>Music.toggle();
+document.addEventListener('pointerdown',()=>{if(Music.on&&!Music.timer)Music.start()},{once:true});
 $('#qSay').onclick=()=>{if(G.q)say(G.q.say)};
 addEventListener('keydown',e=>{
  if(G.mode==='question'&&/^Digit[1-4]$/.test(e.code)){const b=document.querySelectorAll('.opt')[+e.code.slice(5)-1];if(b)b.click()}});
@@ -712,7 +758,7 @@ function frame(){
  renderer.render(scene,camera);
  requestAnimationFrame(frame);
 }
-toSelect();
+toSelect();updMusicBtn();
 requestAnimationFrame(frame);
 })();
 </script>

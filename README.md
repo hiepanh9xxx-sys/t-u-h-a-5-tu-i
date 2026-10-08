@@ -31,13 +31,16 @@ Bé trả lời câu hỏi để giúp đoàn tàu thoát khỏi yêu quái Tàu
 
 ## Giọng đọc tiếng Việt
 
-Game dùng giọng đọc có sẵn của trình duyệt và tự ưu tiên giọng **Google Tiếng Việt**.
+Mặc định game đọc câu hỏi bằng **giọng Google Tiếng Việt** (giọng của Google Dịch), phát dưới dạng âm thanh nên nghe rõ và giống nhau trên mọi máy, kể cả iPhone.
 
-- **Chrome trên máy tính**: có sẵn giọng Google Tiếng Việt.
-- **Android**: vào Cài đặt → Chuyển văn bản thành giọng nói → chọn bộ máy của Google và tải gói tiếng Việt.
-- **iPhone / Safari**: dùng giọng tiếng Việt của Apple.
+- Cần có kết nối mạng khi chơi.
+- Đây là dịch vụ đọc miễn phí, không chính thức của Google Dịch. Nếu một lúc nào đó không tải được, game tự chuyển sang giọng tiếng Việt có sẵn của máy.
+- Ở màn chọn tàu có ô **Giọng đọc** để đổi sang giọng của máy, và nút **Nghe thử**.
+- Muốn có giọng máy tốt trên Android: Cài đặt → Chuyển văn bản thành giọng nói → chọn bộ máy của Google và tải gói tiếng Việt.
 
-Có thể đổi giọng và nghe thử ở màn chọn tàu.
+## Nhạc nền
+
+Nhạc nền vui tươi được tạo trực tiếp bằng Web Audio (không cần file nhạc). Mỗi chặng có giai điệu và nhịp riêng, nhạc tự nhỏ lại khi giọng đọc câu hỏi. Bấm nút 🎵 để bật hoặc tắt.
 
 ## Chạy trên máy
 
@@ -67,8 +70,8 @@ Sau khoảng 1 phút game sẽ có ở địa chỉ `https://<tên-tài-khoản>
 ## Công nghệ
 
 - [Three.js r128](https://threejs.org/) (tải từ cdnjs) cho đồ họa 3D
-- Web Audio API cho hiệu ứng âm thanh
-- Web Speech API cho giọng đọc
+- Web Audio API cho nhạc nền và hiệu ứng âm thanh
+- Giọng Google Dịch (trực tuyến) và Web Speech API cho giọng đọc
 - Phông chữ Baloo 2 từ Google Fonts
 
 Các đầu tàu và yêu quái đều là thiết kế nguyên bản, không dùng nhân vật có bản quyền.
